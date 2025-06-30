@@ -19,6 +19,8 @@ struct AICoachView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     
+    @FocusState private var isTextFieldFocused: Bool
+    
     private let openAIService = OpenAIService()
         
     var body: some View {
@@ -50,6 +52,7 @@ struct AICoachView: View {
                             .textFieldStyle(.roundedBorder)
                             .lineLimit(1...5)
                             .submitLabel(.send)
+                            .focused($isTextFieldFocused)
                             .onSubmit(sendMessage)
                         
                         Button(action: sendMessage) {
@@ -73,6 +76,9 @@ struct AICoachView: View {
             } message: {
                 Text(errorMessage)
             }
+        }
+        .onAppear {
+            isTextFieldFocused = true
         }
     }
     
@@ -105,6 +111,7 @@ struct AICoachView: View {
                     isLoading = false
                 }
             }
+            isTextFieldFocused = true
         }
     }
 }
