@@ -4,6 +4,7 @@ struct Message: Identifiable, Equatable {
     let id = UUID()
     let content: String
     let isUser: Bool
+    let isCommitPrompt: Bool
     
     static func == (lhs: Message, rhs: Message) -> Bool {
         lhs.id == rhs.id
@@ -11,18 +12,20 @@ struct Message: Identifiable, Equatable {
 }
 
 struct AICoachView: View {
+    @EnvironmentObject var userProfile: UserProfile
     @State private var messageText = ""
     @State private var messages: [Message] = [
-        Message(content: "What brings you to SwitchUp today?", isUser: false)
+        Message(content: "What brings you to SwitchUp today?", isUser: false, isCommitPrompt: false)
     ]
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var cachedExperimentText: String?
     
     @FocusState private var isTextFieldFocused: Bool
     
     private let openAIService = OpenAIService()
-        
+   
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -33,6 +36,14 @@ struct AICoachView: View {
                                 MessageBubble(message: message)
                             }
                             .padding(.vertical, 16)
+
+                            if let lastMessage = messages.last, lastMessage.isCommitPrompt {
+                                Button("Yes, I'm in") {
+                                    commitExperiment()    
+                                }
+                                .buttonStyle(.bordered)
+                                .tint(.blue)    
+                            }
                         }
                         .padding(.horizontal)
                     }
@@ -85,9 +96,9 @@ struct AICoachView: View {
     private func sendMessage() {
         let userMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !userMessage.isEmpty else { return }
-        
+
         // Add user message to conversation
-        let newUserMessage = Message(content: userMessage, isUser: true)
+        let newUserMessage = Message(content: userMessage, isUser: true, isCommitPrompt: false)
         messages.append(newUserMessage)
         messageText = ""
                 
@@ -97,10 +108,25 @@ struct AICoachView: View {
         Task {
             do {
                 let response = try await openAIService.sendMessage(message: userMessage)
+
+                let commitPromptToken = "[[COMMIT_PROMPT]]"
+                let experimentToken = "[[EXPERIMENT]]"
+
+                let isCommitPrompt = response.contains(commitPromptToken)
+                let hasExperiment = response.contains(experimentToken)
+
+                let cleanedResponse = response
+                    .replacingOccurrences(of: commitPromptToken, with: "")
+                    .replacingOccurrences(of: experimentToken, with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if isCommitPrompt && hasExperiment {
+                    cachedExperimentText = response
+                }
                 
                 // Update UI on main thread
                 await MainActor.run {
-                    messages.append(Message(content: response, isUser: false))
+                    messages.append(Message(content: cleanedResponse, isUser: false, isCommitPrompt: isCommitPrompt))
                     isLoading = false
                 }
                                 
@@ -113,6 +139,31 @@ struct AICoachView: View {
             }
             isTextFieldFocused = true
         }
+    }
+
+    private func commitExperiment() {
+        guard let raw = cachedExperimentText else { return }
+
+        guard let titleLine = raw.split(separator: "\n").first(where: { $0.starts(with: "Title:") }) else { return }
+        let title = titleLine.replacingOccurrences(of: "Title:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let parts = raw
+            .components(separatedBy: "\n")
+            .filter { $0.starts(with: "- ") }
+            .map { $0.replacingOccurrences(of: "- ", with: "").trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        let experiment = Experiment(
+            title: title,
+            parts: parts,
+            startDate: Date(),
+            checkInDates: []
+        )
+        
+        userProfile.activeExperiment = experiment
+
+        messages.append(Message(content: "Awesome. You’re all set. I’ll check in with you daily.", isUser: false, isCommitPrompt: false))
+
+        cachedExperimentText = nil
     }
 }
 

@@ -23,8 +23,7 @@ struct MainTabView: View {
             
             // Profile Tab - Temporarily using a placeholder
             NavigationStack {
-                Text("Profile coming soon")
-                    .navigationTitle("Profile")
+                ProfileView()
             }
             .tabItem {
                 Label("Profile", systemImage: "person.fill")
