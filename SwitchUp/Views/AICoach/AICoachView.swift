@@ -1,10 +1,23 @@
 import SwiftUI
 
+extension Date {
+    func strippedTime() -> Date {
+        Calendar.current.startOfDay(for: self)
+    }
+}
+
+enum CheckInStatus: String, Codable {
+    case onTrack = "on_track"
+    case sortOf = "sort_of"
+    case offTrack = "off_track"
+}
+
 struct Message: Identifiable, Equatable {
     let id = UUID()
     let content: String
     let isUser: Bool
     let isCommitPrompt: Bool
+    let isCheckInPrompt: Bool
     
     static func == (lhs: Message, rhs: Message) -> Bool {
         lhs.id == rhs.id
@@ -15,12 +28,14 @@ struct AICoachView: View {
     @EnvironmentObject var userProfile: UserProfile
     @State private var messageText = ""
     @State private var messages: [Message] = [
-        Message(content: "What brings you to SwitchUp today?", isUser: false, isCommitPrompt: false)
+        Message(content: "What brings you to SwitchUp today?", isUser: false, isCommitPrompt: false, isCheckInPrompt: false)
     ]
     @State private var isLoading = false
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var cachedExperimentText: String?
+    @State private var isExpectingDifficultyAnswer = false
+    @State private var lastCheckInDateKey: String? = nil
     
     @FocusState private var isTextFieldFocused: Bool
     
@@ -43,6 +58,28 @@ struct AICoachView: View {
                                 }
                                 .buttonStyle(.bordered)
                                 .tint(.blue)    
+                            }
+                            if let lastMessage = messages.last, lastMessage.isCheckInPrompt {
+                                HStack(spacing: 12) {
+                                    Button("✅ On Track") {
+                                        handleCheckIn(.onTrack)
+                                    }
+                                    Button("🤔 Sort of") {
+                                        handleCheckIn(.sortOf)
+                                    }
+                                    Button("❌ Off Track") {
+                                        handleCheckIn(.offTrack)
+                                    }
+                                }
+                                .padding()
+                            }
+                            if isExpectingDifficultyAnswer {
+                                HStack(spacing: 12) {
+                                    Button("😌 Easy") { handleDifficulty(.easy) }
+                                    Button("😐 Medium") { handleDifficulty(.medium) }
+                                    Button("😩 Hard") { handleDifficulty(.hard) }
+                                }
+                                .padding()
                             }
                         }
                         .padding(.horizontal)
@@ -91,14 +128,21 @@ struct AICoachView: View {
         .onAppear {
             isTextFieldFocused = true
         }
+        .toolbar {
+            Button("Fake Check-In") {
+                messages.append(
+                    Message(content: "How did it go today?", isUser: false, isCommitPrompt: false, isCheckInPrompt: true)
+                )
+            }
+        }
     }
-    
+
     private func sendMessage() {
         let userMessage = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !userMessage.isEmpty else { return }
 
         // Add user message to conversation
-        let newUserMessage = Message(content: userMessage, isUser: true, isCommitPrompt: false)
+        let newUserMessage = Message(content: userMessage, isUser: true, isCommitPrompt: false, isCheckInPrompt: false)
         messages.append(newUserMessage)
         messageText = ""
                 
@@ -126,7 +170,7 @@ struct AICoachView: View {
                 
                 // Update UI on main thread
                 await MainActor.run {
-                    messages.append(Message(content: cleanedResponse, isUser: false, isCommitPrompt: isCommitPrompt))
+                    messages.append(Message(content: cleanedResponse, isUser: false, isCommitPrompt: isCommitPrompt, isCheckInPrompt: false))
                     isLoading = false
                 }
                                 
@@ -156,15 +200,45 @@ struct AICoachView: View {
             title: title,
             parts: parts,
             startDate: Date(),
-            checkInDates: []
+            checkInDates: [],
+            checkInRecords: [:]
         )
         
         userProfile.activeExperiment = experiment
 
-        messages.append(Message(content: "Awesome. You’re all set. I’ll check in with you daily.", isUser: false, isCommitPrompt: false))
+        messages.append(Message(content: "Awesome. You’re all set. I’ll check in with you daily.", isUser: false, isCommitPrompt: false, isCheckInPrompt: false))
 
         cachedExperimentText = nil
     }
+
+    private func handleCheckIn(_ status: CheckInStatus) {
+        let todayKey = dateKey(for: Date())
+        userProfile.activeExperiment?.checkInRecords[todayKey] = status
+
+        // Save date so we know what difficulty this belongs to
+        lastCheckInDateKey = todayKey
+        isExpectingDifficultyAnswer = true
+
+        messages.append(Message(content: "Thanks! How difficult was it today?", isUser: false, isCommitPrompt: false, isCheckInPrompt: false))
+    }
+
+    private func handleDifficulty(_ level: DifficultyLevel) {
+        guard let key = lastCheckInDateKey else { return }
+
+        userProfile.activeExperiment?.difficultyLevel[key] = level
+        isExpectingDifficultyAnswer = false
+        lastCheckInDateKey = nil
+
+        messages.append(
+            Message(content: "Appreciate the check-in. You're building something one day at a time 💪", isUser: false, isCommitPrompt: false, isCheckInPrompt: false)
+        )
+    }
+    private func dateKey(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
+
 }
 
 struct MessageBubble: View {
