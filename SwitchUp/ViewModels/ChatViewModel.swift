@@ -26,6 +26,7 @@ struct CheckInAnswer: Codable {
 
 class ChatViewModel: ObservableObject {
     @Published var messages: [String] = []
+    @Published var quickPrompts: [String] = []
     private var conversationHistory: [ChatMessage] = []
     private var flowMode: FlowMode = .normal
     
@@ -45,10 +46,17 @@ class ChatViewModel: ObservableObject {
         if !text.isEmpty {
             messages.append(text)
             conversationHistory.append(ChatMessage(role: "user", content: text))
+            
+            // Check if user wants to start a daily check-in
+            if text.lowercased() == "daily check-in" && flowMode != .dailyCheckIn {
+                startDailyCheckIn()
+                return
+            }
         }
         
         if flowMode == .dailyCheckIn {
-            handleCheckInAnswer(text)
+            // End check-in after receiving the response
+            endCheckIn()
         } else {
             callLLM()
         }
@@ -57,93 +65,34 @@ class ChatViewModel: ObservableObject {
     // MARK: Daily Check-In handling
     func startDailyCheckIn() {
         flowMode = .dailyCheckIn
-        currentQuestionIndex = 0
-        messages.append("Starting your daily check-in!")
-        conversationHistory.append(ChatMessage(role: "assistant", content: "Starting your daily check-in!"))
+        let initialMessage = "How did today go overall?"
+        messages.append(initialMessage)
+        conversationHistory.append(ChatMessage(role: "assistant", content: initialMessage))
         
-        let prompt = """
-        You are a helpful health coach. Generate 3 concise daily check-in questions for the user to track their progress on their goal and strategy. Provide only the questions as a JSON array, like:
-        ["Did you follow your plan today?", "How was your energy level?", "Any wins or obstacles?"]
-        """
-        
-        let systemMessage = ChatMessage(role: "system", content: prompt)
-        LLMService.shared.sendMessage(conversation: [systemMessage]) { [weak self] result in
-            switch result {
-            case .success(let response):
-                if let questions = self?.extractQuestions(from: response) {
-                    DispatchQueue.main.async {
-                        self?.checkInQuestions = questions
-                        self?.askNextCheckInQuestion()
-                    }
-                }
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self?.messages.append("Error generating check-in questions: \(error.localizedDescription)")
-                }
-            }
-        }
+        // Set quick prompts for the first question
+        quickPrompts = [
+            "😌️ Followed plan — feeling good",
+            "😐 Mixed — some good, some off",
+            "🚫 Not great — fell into old habits"
+        ]
     }
     
-    private func extractQuestions(from response: String) -> [String]? {
-        let data = response.data(using: .utf8) ?? Data()
-        return try? JSONDecoder().decode([String].self, from: data)
-    }
-    
-    func askNextCheckInQuestion() {
-        guard currentQuestionIndex < checkInQuestions.count else {
-            endCheckIn()
-            return
-        }
-        
-        let question = checkInQuestions[currentQuestionIndex]
-        messages.append(question)
-        conversationHistory.append(ChatMessage(role: "assistant", content: question))
-    }
-    
-    private func handleCheckInAnswer(_ answer: String) {
-        let question = checkInQuestions[currentQuestionIndex]
-        currentQuestionIndex += 1
-
-        let feedbackPrompt = """
-        The user answered the daily check-in question: "\(question)" with: "\(answer)".
-        Provide a concise, encouraging coaching response.
-        """
-
-        let systemMessage = ChatMessage(role: "system", content: feedbackPrompt)
-        LLMService.shared.sendMessage(conversation: [systemMessage]) { [weak self] result in
-            switch result {
-            case .success(let response):
-                DispatchQueue.main.async {
-                    self?.appendBotMessage(response)
-                    self?.currentCheckInAnswers.append(CheckInAnswer(question: question, answer: answer, coachFeedback: response))
-                    self?.askNextCheckInQuestion()
-                }
-            case .failure(let error):
-                DispatchQueue.main.async {
-                    self?.appendBotMessage("Error generating coaching feedback: \(error.localizedDescription)")
-                    self?.currentCheckInAnswers.append(CheckInAnswer(question: question, answer: answer, coachFeedback: nil))
-                    self?.askNextCheckInQuestion()
-                }
-            }
-        }
-    }
-
-    private func appendBotMessage(_ text: String) {
-        messages.append(text)
-        conversationHistory.append(ChatMessage(role: "assistant", content: text))
-    }
-
     private func endCheckIn() {
         flowMode = .normal
-        appendBotMessage("Thanks for checking in! Keep up the great work.")
-        
-        let newCheckIn = DailyCheckIn(id: UUID(), date: Date(), answers: currentCheckInAnswers)
+        let newCheckIn = DailyCheckIn(
+            id: UUID(),
+            date: Date(),
+            answers: [
+                CheckInAnswer(
+                    question: "How did today go overall?",
+                    answer: messages.last ?? "",
+                    coachFeedback: nil
+                )
+            ]
+        )
         StorageService.shared.saveCheckIn(newCheckIn)
-        currentCheckInAnswers.removeAll()
+        quickPrompts = []
     }
-
-
-
     
     // MARK: LLM-related functions
     private func callLLM() {

@@ -67,6 +67,28 @@ struct ChatFlowView: View {
                     
                     // Fixed bottom input area
                     VStack(spacing: 0) {
+                        // Quick prompts
+                        if !viewModel.quickPrompts.isEmpty {
+                            VStack(alignment: .trailing, spacing: 8) {
+                                ForEach(viewModel.quickPrompts, id: \.self) { prompt in
+                                    Button(action: {
+                                        userInput = prompt
+                                        sendMessage()
+                                    }) {
+                                        Text(prompt)
+                                            .font(.system(size: 18))
+                                            .padding(12)
+                                            .background(Color(red: 245/255, green: 245/255, blue: 245/255))
+                                            .cornerRadius(16)
+                                            .padding(.horizontal, 4)
+                                    }
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal)
+                            .padding(.bottom, 8)
+                        }
+                        
                         // Input area
                         HStack(alignment: .bottom, spacing: 8) {
                             // Text input field
