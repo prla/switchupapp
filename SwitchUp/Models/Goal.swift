@@ -6,3 +6,9 @@
 //
 
 import Foundation
+
+struct Goal: Codable {
+    var text: String
+    var why: String
+    var createdAt: Date?
+}
