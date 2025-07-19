@@ -6,94 +6,97 @@ struct ChatFlowView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                // Main content area
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(alignment: .leading) {
-                            ForEach(viewModel.messages.indices, id: \.self) { index in
-                                Text(viewModel.messages[index])
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .id(index)
+            VStack(spacing: 0) {
+                AppTitleView()
+                
+                ZStack(alignment: .bottom) {
+                    // Main content area
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            VStack(alignment: .leading) {
+                                ForEach(viewModel.messages.indices, id: \.self) { index in
+                                    Text(viewModel.messages[index])
+                                        .padding()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .id(index)
+                                }
+                                // Add padding at the bottom to account for the input area
+                                Spacer().frame(height: 60)
                             }
-                            // Add padding at the bottom to account for the input area
-                            Spacer().frame(height: 60)
+                            .padding(.horizontal)
+                        }
+                        .onChange(of: viewModel.messages.count) { _, _ in
+                            if let lastIndex = viewModel.messages.indices.last {
+                                withAnimation {
+                                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Fixed bottom input area
+                    VStack(spacing: 0) {
+                        // Input area
+                        HStack(alignment: .bottom, spacing: 8) {
+                            // Clear button (only visible when there's text)
+                            if !userInput.isEmpty {
+                                Button(action: {
+                                    withAnimation {
+                                        userInput = ""
+                                    }
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.gray)
+                                        .opacity(0.7)
+                                }
+                                .accessibilityLabel("Clear message")
+                                .padding(.leading, 8)
+                                .transition(.opacity)
+                            }
+                            
+                            // Text input field
+                            ZStack(alignment: .trailing) {
+                                ExpandingTextEditor(text: $userInput, maxHeight: 44)
+                                    .frame(minHeight: 36, maxHeight: 44)
+                                    .padding(.trailing, 36)
+                                    .padding(.leading, 12)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(Color(.systemGray6))
+                                    )
+                                    .onSubmit {
+                                        sendMessage()
+                                    }
+                                    .accessibilityHint("Type your message to the coach")
+                                
+                                // Send button
+                                Button(action: sendMessage) {
+                                    Image(systemName: "arrow.up.circle.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(.black)
+                                        .padding(8)
+                                }
+                                .disabled(isSendButtonDisabled)
+                                .opacity(isSendButtonDisabled ? 0.5 : 1.0)
+                                .accessibilityLabel("Send message")
+                            }
                         }
                         .padding(.horizontal)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemBackground).ignoresSafeArea(.all, edges: .bottom))
                     }
-                    .onChange(of: viewModel.messages.count) { _, _ in
-                        if let lastIndex = viewModel.messages.indices.last {
-                            withAnimation {
-                                proxy.scrollTo(lastIndex, anchor: .bottom)
-                            }
-                        }
-                    }
-                }
-                
-                // Fixed bottom input area
-                VStack(spacing: 0) {
-                    // Input area
-                    HStack(alignment: .bottom, spacing: 8) {
-                        // Clear button (only visible when there's text)
-                        if !userInput.isEmpty {
-                            Button(action: {
-                                withAnimation {
-                                    userInput = ""
-                                }
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.gray)
-                                    .opacity(0.7)
-                            }
-                            .accessibilityLabel("Clear message")
-                            .padding(.leading, 8)
-                            .transition(.opacity)
-                        }
-                        
-                        // Text input field
-                        ZStack(alignment: .trailing) {
-                            ExpandingTextEditor(text: $userInput, maxHeight: 44)
-                                .frame(minHeight: 36, maxHeight: 44)
-                                .padding(.trailing, 36)
-                                .padding(.leading, 12)
-                                .padding(.vertical, 4)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .fill(Color(.systemGray6))
-                                )
-                                .onSubmit {
-                                    sendMessage()
-                                }
-                                .accessibilityHint("Type your message to the coach")
-                            
-                            // Send button
-                            Button(action: sendMessage) {
-                                Image(systemName: "arrow.up.circle.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundColor(.black)
-                                    .padding(8)
-                            }
-                            .disabled(isSendButtonDisabled)
-                            .opacity(isSendButtonDisabled ? 0.5 : 1.0)
-                            .accessibilityLabel("Send message")
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 8)
                     .background(Color(.systemBackground).ignoresSafeArea(.all, edges: .bottom))
                 }
-                .background(Color(.systemBackground).ignoresSafeArea(.all, edges: .bottom))
-            }
-            .navigationTitle("Coach")
-            .onTapGesture {
-                self.hideKeyboard()
-            }
-            .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") {
-                        self.hideKeyboard()
+                .onTapGesture {
+                    self.hideKeyboard()
+                }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") {
+                            self.hideKeyboard()
+                        }
                     }
                 }
             }

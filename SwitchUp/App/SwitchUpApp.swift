@@ -41,7 +41,6 @@ struct SwitchUpApp: App {
                         .onAppear {
                             requestHealthAuthorizationAndFetchSummary()
                         }
-                        .navigationTitle("Coach")
                 }
                 .tag(0)
                 .tabItem {
@@ -51,7 +50,6 @@ struct SwitchUpApp: App {
 
                 NavigationStack {
                     InsightsView()
-                        .navigationTitle("Insights")
                 }
                 .tag(1)
                 .tabItem {
@@ -61,7 +59,6 @@ struct SwitchUpApp: App {
 
                 NavigationStack {
                     ProfileView()
-                        .navigationTitle("Profile")
                 }
                 .tag(2)
                 .tabItem {
