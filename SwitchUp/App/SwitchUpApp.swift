@@ -27,6 +27,14 @@ struct SwitchUpApp: App {
                 }
 
                 NavigationStack {
+                    InsightsView()
+                        .navigationTitle("Insights")
+                }
+                .tabItem {
+                    Label("Insights", systemImage: "chart.bar.fill")
+                }
+
+                NavigationStack {
                     ProfileView()
                         .navigationTitle("Profile")
                 }
