@@ -39,11 +39,6 @@ struct ChatFlowView: View {
                     }
                 }
                 .padding()
-
-                Button("Start Daily Check-In") {
-                    viewModel.startDailyCheckIn()
-                }
-                .padding(.top)
             }
             .padding()
             .navigationTitle("Coach")
@@ -88,5 +83,3 @@ struct ExpandingTextEditor: View {
         }
     }
 }
-
-
