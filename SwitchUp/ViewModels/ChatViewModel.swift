@@ -43,7 +43,7 @@ class ChatViewModel: ObservableObject {
     
     func sendUserMessage(_ text: String) {
         if !text.isEmpty {
-            messages.append("You: \(text)")
+            messages.append(text)
             conversationHistory.append(ChatMessage(role: "user", content: text))
         }
         
@@ -58,7 +58,7 @@ class ChatViewModel: ObservableObject {
     func startDailyCheckIn() {
         flowMode = .dailyCheckIn
         currentQuestionIndex = 0
-        messages.append("Coach: Starting your daily check-in!")
+        messages.append("Starting your daily check-in!")
         conversationHistory.append(ChatMessage(role: "assistant", content: "Starting your daily check-in!"))
         
         let prompt = """
@@ -96,7 +96,7 @@ class ChatViewModel: ObservableObject {
         }
         
         let question = checkInQuestions[currentQuestionIndex]
-        messages.append("Coach: \(question)")
+        messages.append(question)
         conversationHistory.append(ChatMessage(role: "assistant", content: question))
     }
     
@@ -129,7 +129,7 @@ class ChatViewModel: ObservableObject {
     }
 
     private func appendBotMessage(_ text: String) {
-        messages.append("Coach: \(text)")
+        messages.append(text)
         conversationHistory.append(ChatMessage(role: "assistant", content: text))
     }
 
@@ -173,7 +173,7 @@ class ChatViewModel: ObservableObject {
         
         // Append only the cleaned conversational text to chat
         if !cleanedText.isEmpty {
-            messages.append("Coach: \(cleanedText)")
+            messages.append(cleanedText)
             conversationHistory.append(ChatMessage(role: "assistant", content: cleanedText))
         }
         
