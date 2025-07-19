@@ -73,7 +73,7 @@ struct SwitchUpApp: App {
     func requestHealthAuthorizationAndFetchSummary() {
         HealthService.shared.ensureAuthorization { granted, error in
             DispatchQueue.main.async {
-                chatViewModel.startConversation("Hi! Let's start by clarifying your main goal.")
+                chatViewModel.startConversation("Hey there 👋 what brings you to SwitchUp today?")
             }
         }
     }
