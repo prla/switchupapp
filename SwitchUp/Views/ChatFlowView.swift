@@ -1,5 +1,35 @@
 import SwiftUI
 
+struct ChatMessageView: View {
+    let message: String
+    let isUserMessage: Bool
+    
+    var body: some View {
+        HStack {
+            if isUserMessage {
+                Spacer()
+                
+                // User message with light purple background and no border
+                Text(message)
+                    .font(.system(size: 18))
+                    .padding(12)
+                    .background(Color(red: 242/255, green: 243/255, blue: 255/255))
+                    .cornerRadius(16)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
+            } else {
+                // Coach message as plain text
+                Text(message)
+                    .font(.system(size: 18))
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 4)
+                
+                Spacer()
+            }
+        }
+    }
+}
+
 struct ChatFlowView: View {
     @EnvironmentObject var viewModel: ChatViewModel
     @State private var userInput = ""
@@ -13,12 +43,13 @@ struct ChatFlowView: View {
                     // Main content area
                     ScrollViewReader { proxy in
                         ScrollView {
-                            VStack(alignment: .leading) {
-                                ForEach(viewModel.messages.indices, id: \.self) { index in
-                                    Text(viewModel.messages[index])
-                                        .padding()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .id(index)
+                            LazyVStack(alignment: .leading, spacing: 8) {
+                                ForEach(Array(viewModel.messages.enumerated()), id: \.offset) { index, message in
+                                    ChatMessageView(
+                                        message: message,
+                                        isUserMessage: index % 2 == 1
+                                    )
+                                    .id(index)
                                 }
                                 // Add padding at the bottom to account for the input area
                                 Spacer().frame(height: 60)
@@ -38,22 +69,6 @@ struct ChatFlowView: View {
                     VStack(spacing: 0) {
                         // Input area
                         HStack(alignment: .bottom, spacing: 8) {
-                            // Clear button (only visible when there's text)
-                            if !userInput.isEmpty {
-                                Button(action: {
-                                    withAnimation {
-                                        userInput = ""
-                                    }
-                                }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(.gray)
-                                        .opacity(0.7)
-                                }
-                                .accessibilityLabel("Clear message")
-                                .padding(.leading, 8)
-                                .transition(.opacity)
-                            }
-                            
                             // Text input field
                             ZStack(alignment: .trailing) {
                                 ExpandingTextEditor(text: $userInput, maxHeight: 44)
