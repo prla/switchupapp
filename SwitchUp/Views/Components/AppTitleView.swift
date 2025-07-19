@@ -4,7 +4,7 @@ struct AppTitleView: View {
     var body: some View {
         VStack(spacing: 8) {
             Text("SwitchUp.")
-                .font(.title2)
+                .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(Color(red: 0, green: 9/255, blue: 1))
                 .frame(maxWidth: .infinity, alignment: .center)
