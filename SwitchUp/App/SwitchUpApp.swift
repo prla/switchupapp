@@ -42,9 +42,6 @@ struct SwitchUpApp: App {
                             requestHealthAuthorizationAndFetchSummary()
                         }
                         .navigationTitle("Coach")
-                        .safeAreaInset(edge: .bottom) {
-                            Color.clear.frame(height: 1)
-                        }
                 }
                 .tag(0)
                 .tabItem {
@@ -55,9 +52,6 @@ struct SwitchUpApp: App {
                 NavigationStack {
                     InsightsView()
                         .navigationTitle("Insights")
-                        .safeAreaInset(edge: .bottom) {
-                            Color.clear.frame(height: 1)
-                        }
                 }
                 .tag(1)
                 .tabItem {
@@ -68,9 +62,6 @@ struct SwitchUpApp: App {
                 NavigationStack {
                     ProfileView()
                         .navigationTitle("Profile")
-                        .safeAreaInset(edge: .bottom) {
-                            Color.clear.frame(height: 1)
-                        }
                 }
                 .tag(2)
                 .tabItem {
@@ -79,13 +70,6 @@ struct SwitchUpApp: App {
                 }
             }
             .accentColor(.primary)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(Color(.separator))
-                    .frame(maxWidth: .infinity)
-                    .offset(y: -65) // Adjust this value to position the line
-            }
         }
     }
 
