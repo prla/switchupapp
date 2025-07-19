@@ -50,17 +50,8 @@ struct SwitchUpApp: App {
 
     func requestHealthAuthorizationAndFetchSummary() {
         HealthService.shared.ensureAuthorization { granted, error in
-            if granted {
-                HealthService.shared.fetchBasicHealthSummary { summary in
-                    print("Health summary:", summary)
-                    DispatchQueue.main.async {
-                        chatViewModel.startConversation("Coach: Hi! \(summary) Let's start by clarifying your main goal.")
-                    }
-                }
-            } else {
-                DispatchQueue.main.async {
-                    chatViewModel.startConversation("Coach: Hi! Let's start by clarifying your main goal.")
-                }
+            DispatchQueue.main.async {
+                chatViewModel.startConversation("Coach: Hi! Let's start by clarifying your main goal.")
             }
         }
     }
