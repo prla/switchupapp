@@ -10,10 +10,31 @@ import SwiftUI
 @main
 struct SwitchUpApp: App {
     @StateObject private var chatViewModel = ChatViewModel()
-
+    @State private var selectedTab = 0
+    
+    init() {
+        // Customize the tab bar appearance
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        
+        // Remove default shadow and border
+        appearance.shadowColor = nil
+        appearance.shadowImage = UIImage()
+        
+        // Set the selection indicator color
+        appearance.stackedLayoutAppearance.selected.iconColor = .label
+        appearance.stackedLayoutAppearance.normal.iconColor = .secondaryLabel
+        
+        // Apply the appearance
+        UITabBar.appearance().standardAppearance = appearance
+        if #available(iOS 15.0, *) {
+            UITabBar.appearance().scrollEdgeAppearance = appearance
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
-            TabView {
+            TabView(selection: $selectedTab) {
                 NavigationStack {
                     ChatFlowView()
                         .environmentObject(chatViewModel)
@@ -21,7 +42,11 @@ struct SwitchUpApp: App {
                             requestHealthAuthorizationAndFetchSummary()
                         }
                         .navigationTitle("Coach")
+                        .safeAreaInset(edge: .bottom) {
+                            Color.clear.frame(height: 1)
+                        }
                 }
+                .tag(0)
                 .tabItem {
                     Label("", systemImage: "message.fill")
                         .accessibilityLabel("Coach")
@@ -30,7 +55,11 @@ struct SwitchUpApp: App {
                 NavigationStack {
                     InsightsView()
                         .navigationTitle("Insights")
+                        .safeAreaInset(edge: .bottom) {
+                            Color.clear.frame(height: 1)
+                        }
                 }
+                .tag(1)
                 .tabItem {
                     Label("", systemImage: "chart.bar.fill")
                         .accessibilityLabel("Insights")
@@ -39,11 +68,23 @@ struct SwitchUpApp: App {
                 NavigationStack {
                     ProfileView()
                         .navigationTitle("Profile")
+                        .safeAreaInset(edge: .bottom) {
+                            Color.clear.frame(height: 1)
+                        }
                 }
+                .tag(2)
                 .tabItem {
                     Label("", systemImage: "person.fill")
                         .accessibilityLabel("Profile")
                 }
+            }
+            .accentColor(.primary)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(Color(.separator))
+                    .frame(maxWidth: .infinity)
+                    .offset(y: -65) // Adjust this value to position the line
             }
         }
     }
