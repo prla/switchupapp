@@ -23,7 +23,8 @@ struct SwitchUpApp: App {
                         .navigationTitle("Coach")
                 }
                 .tabItem {
-                    Label("Coach", systemImage: "message.fill")
+                    Label("", systemImage: "message.fill")
+                        .accessibilityLabel("Coach")
                 }
 
                 NavigationStack {
@@ -31,7 +32,8 @@ struct SwitchUpApp: App {
                         .navigationTitle("Insights")
                 }
                 .tabItem {
-                    Label("Insights", systemImage: "chart.bar.fill")
+                    Label("", systemImage: "chart.bar.fill")
+                        .accessibilityLabel("Insights")
                 }
 
                 NavigationStack {
@@ -39,7 +41,8 @@ struct SwitchUpApp: App {
                         .navigationTitle("Profile")
                 }
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("", systemImage: "person.fill")
+                        .accessibilityLabel("Profile")
                 }
             }
         }
