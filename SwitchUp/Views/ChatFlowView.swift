@@ -45,10 +45,39 @@ struct ChatFlowView: View {
                         ScrollView {
                             LazyVStack(alignment: .leading, spacing: 8) {
                                 ForEach(Array(viewModel.messages.enumerated()), id: \.offset) { index, message in
-                                    ChatMessageView(
-                                        message: message,
-                                        isUserMessage: index % 2 == 1
-                                    )
+                                    VStack(alignment: .trailing, spacing: 4) {
+                                        // Regular message
+                                        ChatMessageView(
+                                            message: message,
+                                            isUserMessage: index % 2 == 1
+                                        )
+                                        
+                                        // Quick responses (only show after assistant's messages that aren't from the user)
+                                        if !viewModel.quickPrompts.isEmpty && index == viewModel.messages.count - 1 && index % 2 == 0 {
+                                            HStack(spacing: 8) {
+                                                ForEach(viewModel.quickPrompts, id: \.self) { prompt in
+                                                    Button(action: {
+                                                        viewModel.sendUserMessage(prompt)
+                                                    }) {
+                                                        Text(prompt)
+                                                            .font(.system(size: 16))
+                                                            .padding(.horizontal, 16)
+                                                            .padding(.vertical, 8)
+                                                            .background(Color(red: 242/255, green: 243/255, blue: 255/255))
+                                                            .cornerRadius(20)
+                                                            .overlay(
+                                                                RoundedRectangle(cornerRadius: 20)
+                                                                    .stroke(Color(red: 220/255, green: 222/255, blue: 255/255), lineWidth: 1)
+                                                            )
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.leading, 8)
+                                            .padding(.top, 4)
+                                        }
+                                    }
                                     .id(index)
                                 }
                                 // Add padding at the bottom to account for the input area
@@ -63,32 +92,18 @@ struct ChatFlowView: View {
                                 }
                             }
                         }
+                        .onChange(of: viewModel.quickPrompts) { _, _ in
+                            // When quickPrompts change, scroll to show them
+                            if let lastIndex = viewModel.messages.indices.last {
+                                withAnimation {
+                                    proxy.scrollTo(lastIndex, anchor: .bottom)
+                                }
+                            }
+                        }
                     }
                     
                     // Fixed bottom input area
                     VStack(spacing: 0) {
-                        // Quick prompts
-                        if !viewModel.quickPrompts.isEmpty {
-                            VStack(alignment: .trailing, spacing: 8) {
-                                ForEach(viewModel.quickPrompts, id: \.self) { prompt in
-                                    Button(action: {
-                                        userInput = prompt
-                                        sendMessage()
-                                    }) {
-                                        Text(prompt)
-                                            .font(.system(size: 18))
-                                            .padding(12)
-                                            .background(Color(red: 245/255, green: 245/255, blue: 245/255))
-                                            .cornerRadius(16)
-                                            .padding(.horizontal, 4)
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.horizontal)
-                            .padding(.bottom, 8)
-                        }
-                        
                         // Input area
                         HStack(alignment: .bottom, spacing: 8) {
                             // Text input field
@@ -123,7 +138,8 @@ struct ChatFlowView: View {
                         .padding(.vertical, 8)
                         .background(Color(.systemBackground).ignoresSafeArea(.all, edges: .bottom))
                     }
-                    .background(Color(.systemBackground).ignoresSafeArea(.all, edges: .bottom))
+                    .background(Color.white)
+                    .padding(.bottom, 8)
                 }
                 .onTapGesture {
                     self.hideKeyboard()
