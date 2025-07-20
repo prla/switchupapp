@@ -51,7 +51,14 @@ class ChatViewModel: ObservableObject {
         
         // Check for special commands
         if text.lowercased() == "sample plan" {
-            generateSamplePlan()
+            let (goal, strategy, plan) = SampleDataGenerator.generateSamplePlan()
+            StorageService.shared.saveGoal(goal)
+            StorageService.shared.saveStrategy(strategy)
+            StorageService.shared.saveWeeklyPlan(plan)
+            
+            let successMessage = "✅ Sample plan generated successfully! You can now view your new goal, strategy, and weekly plan."
+            messages.append(successMessage)
+            conversationHistory.append(ChatMessage(role: "assistant", content: successMessage))
             return
         }
         
@@ -283,44 +290,5 @@ class ChatViewModel: ObservableObject {
                 StorageService.shared.saveWeeklyPlan(plan)
             }
         }
-    }
-    
-    private func generateSamplePlan() {
-        // Create sample goal
-        let sampleGoal = Goal(
-            text: "Improve overall health and energy levels",
-            why: "To have more energy for my family and be more productive at work",
-            createdAt: Date()
-        )
-        
-        // Create sample strategy
-        let sampleStrategy = Strategy(
-            dailyStructure: "Wake up at 6:30 AM, work from 9 AM to 5 PM with a 1-hour lunch break, wind down after 9 PM",
-            foodPreferences: "Mediterranean diet with plenty of vegetables, lean proteins, and healthy fats. Limit processed foods and added sugars.",
-            movement: "30-minute morning walk, 3 strength training sessions per week, and stretching before bed",
-            recovery: "7-8 hours of sleep, 10-minute meditation in the morning, and digital detox after 8 PM"
-        )
-        
-        // Create sample weekly plan
-        let days = [
-            DayPlan(dayNumber: 1, focus: "Hydration and movement", notes: "Start with a morning walk and track water intake"),
-            DayPlan(dayNumber: 2, focus: "Meal prep", notes: "Prepare healthy meals for the week"),
-            DayPlan(dayNumber: 3, focus: "Strength training", notes: "Focus on form and consistency"),
-            DayPlan(dayNumber: 4, focus: "Mindfulness", notes: "Practice 10 minutes of meditation"),
-            DayPlan(dayNumber: 5, focus: "Social connection", notes: "Plan a healthy meal with friends or family"),
-            DayPlan(dayNumber: 6, focus: "Active recovery", notes: "Gentle yoga or stretching"),
-            DayPlan(dayNumber: 7, focus: "Reflection", notes: "Review the week and plan for the next one")
-        ]
-        let sampleWeeklyPlan = WeeklyPlan(startDate: Date(), days: days)
-        
-        // Save all samples
-        StorageService.shared.saveGoal(sampleGoal)
-        StorageService.shared.saveStrategy(sampleStrategy)
-        StorageService.shared.saveWeeklyPlan(sampleWeeklyPlan)
-        
-        // Notify the user
-        let successMessage = "✅ Sample plan generated successfully! You can now view your new goal, strategy, and weekly plan."
-        messages.append(successMessage)
-        conversationHistory.append(ChatMessage(role: "assistant", content: successMessage))
     }
 }
