@@ -12,18 +12,6 @@ enum FlowMode {
     case dailyCheckIn
 }
 
-struct DailyCheckIn: Codable, Identifiable {
-    let id: UUID
-    let date: Date
-    let answers: [CheckInAnswer]
-}
-
-struct CheckInAnswer: Codable {
-    let question: String
-    let answer: String
-    let coachFeedback: String?
-}
-
 class ChatViewModel: ObservableObject {
     @Published var messages: [String] = []
     @Published var quickPrompts: [String] = []
